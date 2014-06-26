@@ -1,3 +1,6 @@
+subauth
+===
+
 An external service for authenticating user requests from Nginx.
 
 Nginx can be configured to use a sub-request to validate if a client is authorized to view a file. To do this, nginx takes the user's request, and redirects it to a separate URL. In this project, we will use a Flask webapp to process this sub-request to determine if it is a valid request.
