@@ -62,7 +62,7 @@ def passport():
             ts, username, sig = auth_cookie.split(':')
             if int(ts) > time.time() and make_digest('%s:%s' % (ts, username)) == sig:
                 log('cookie valid')
-                return valid_auth_response('OK')
+                return valid_auth_response(username)
         except:
             pass
         log('cookie not valid')
