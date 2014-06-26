@@ -41,6 +41,11 @@ def log(msg):
     if conf.get('verbose'):
         sys.stderr.write('%s\n' % msg)
 
+@app.errorhandler(404)
+def page_not_found(error):
+    print 'page not found: %s' % request.path
+    return 'This page does not exist', 404
+
 @app.route("/auth")
 def passport():
     '''

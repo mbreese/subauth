@@ -8,6 +8,9 @@ fi
 cd $(dirname $0)
 
 start() {
+    if [ ! -e tmp ]; then
+        mkdir tmp
+    fi
     if [ -e tmp/uwsgi.pid ]; then
         echo "Is this already running?"
         exit
@@ -58,6 +61,9 @@ status)
     ;;
 stop)
     stop
+    ;;
+restart)
+    stop && start
     ;;
 *)
     echo "Usage: $0 start|stop|status"
