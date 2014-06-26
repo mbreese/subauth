@@ -39,10 +39,7 @@ def valid_auth_response(username):
 
 def log(msg):
     if conf.get('verbose'):
-        if conf.get('verbose.stdout'):
-            sys.stdout.write('%s\n' % msg)
-        else:
-            sys.stderr.write('%s\n' % msg)
+        sys.stderr.write('%s\n' % msg)
 
 @app.errorhandler(404)
 def page_not_found(error):
