@@ -54,6 +54,7 @@ def passport():
     First, we will look for a signed cookie with an expiration date.
     If that doesn't exist, we will try to authenticate the user using HTTP-BASIC authentication
     '''
+    log('original uri: %s' % request.args.get('p'))
 
     auth_cookie = request.cookies.get(conf.get('ticket.cookie', 'IGVTICKET'))
     if auth_cookie:
