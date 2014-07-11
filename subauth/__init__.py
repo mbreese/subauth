@@ -26,8 +26,8 @@ def authenticate():
 
 def valid_auth_response(username):
     expires = str(int(time.time() + conf.get('ticket.expires'))) # now + 1 hour
-    resp = Response("OK", 200, {'X-%s' % conf.get('ticket.cookie', 'IGVTICKET'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
-    resp.set_cookie(conf.get('ticket.cookie', 'IGVTICKET'), '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username))))
+    resp = Response("OK", 200, {'X-%s' % conf.get('ticket.cookie', 'SUBAUTH'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
+    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTH'), '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username))))
     return resp
 
 def log(msg):
