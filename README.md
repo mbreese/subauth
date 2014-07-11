@@ -5,10 +5,10 @@ An external service for authenticating user requests from Nginx.
 
 Nginx can be configured to use a sub-request to validate if a client is authorized to view a file. To do this, nginx takes the user's request, and redirects it to a separate URL. In this project, we will use a Flask webapp to process this sub-request to determine if it is a valid request.
 
-Since we are using a sub-request, the easiest mechanism that we can use to get a username or password is HTTP-basic authentication. If the user enters a valid username/password, they will get a cookie ticket that says they are validated. If they make a new request, then the cookie will be checked for validity first. If that isn't valid, then (and only then) will we poll one of the backends to see if the username/password is good. By checking a ticket first, we will limit any stress on the potentially remote backend (such as a Kerberos server).
+Since we are using a sub-request, the easiest mechanism that we can use to get a username or password is HTTP-basic authentication. If the user enters a valid username/password, they will get a cookie ticket that says they are validated. If they make a new request, then the cookie will be checked for validity first. If that isn't valid, then (and only then) will we poll one of the backends to see if the username/password is good. In addition to storing username/passwords in a local file, you can also delegate authentication to a remote Kerberos backend. Using a cookie/ticket for authentication first limits the stress on any remote backend.
 
 # Installing
-You can install subauth by cloning the Git repository and running 'make'. This will setup a virtualenv folder and setup all dependencies (in `venv`; a copy of virtualenv is included in the `support` directory). This will install Flask and uWSGI. Before using subauth, you'll perform the following steps:
+You can install subauth by cloning the Git repository and running 'make'. This will setup a virtualenv folder and setup all dependencies (in `venv`; a copy of virtualenv is included in the `support` directory). This will install Flask and uWSGI. Before using subauth, you'll need to perform the following steps:
 
 1. setup subauth.conf
 2. add users to a passwd file
@@ -39,6 +39,8 @@ What do these values mean?
 **passwd.kerberos.realm** - If you will be delgating authentication to a Kerberos server, what realm will be used? (This is required if using Kerberos delegation)
 
 **passwd.kerberos.domain** - Similarly, if you need to specify a Kerberos domain, you can set it here. (This is optional for Kerberos delegation)
+
+> Note: If you want to use Kerberos delegation, you'll need to also run `./install.sh kerberos` to install the appropriate Python libraries.
 
 **verbose** - Include this line if you want verbose logging
 
