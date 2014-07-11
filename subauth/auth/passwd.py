@@ -11,7 +11,6 @@ Supported functions: sha1
 
 import subauth
 import subauth.auth
-import subauth.auth.krbauth
 import hashlib
 import os
 
@@ -25,6 +24,7 @@ class PasswdAuth(subauth.auth.Auth):
 
         subauth.auth.Auth.__init__(self, config)
         if config.contains('kerberos.realm'):
+            import subauth.auth.krbauth
             self._kerberos = subauth.auth.krbauth.KerberosAuth(config.get_prefix('kerberos.'))
         else:
             self._kerberos = None
