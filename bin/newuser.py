@@ -5,7 +5,7 @@ import hashlib
 import getpass
 import base64
 
-def new_user(username, password='', hashfunc='sha1'):
+def new_user(username, password='', hashfunc='sha1', groups=[]):
 
     if not password:
         # generating random password
@@ -15,9 +15,9 @@ def new_user(username, password='', hashfunc='sha1'):
     if hashfunc == 'SHA1':
         salt = base64.b64encode(os.urandom(33))
         hashpass = hashlib.sha1(salt + password).hexdigest()
-        print '%s:{SHA1}%s:%s:' % (username, salt, hashpass)
+        print '%s:{SHA1}%s:%s:%s' % (username, salt, hashpass, ','.join(groups))
     elif hashfunc == 'KERBEROS':
-        print '%s:{KERBEROS}%s::' % (username, password)
+        print '%s:{KERBEROS}%s::%s' % (username, password, ','.join(groups))
     else:
         sys.stderr.write("ERROR! Invalid hash function: %s\n" % hashfunc)
         sys.exit(1)
@@ -36,9 +36,11 @@ Possible options:
     -p        Read password from command-line 
     -i        Read password from stdin
               (default is to generate a random password)
+    -g group  Group for the user to belong to (can be multiple)
 
     -sha1            Use SHA1 hash function (default)
     -krb krbname     Use kerberos authentication with the following Kerberos credentials
+
 
 Currently, only SHA1 hashes are generated, but the format may support other
 hash functions in the future.
@@ -53,12 +55,17 @@ if __name__ == '__main__':
     read_pass = False
     read_pass_stdin = False
     hashfunc = 'SHA1'
+    groups = []
     
     last = None
 
     for arg in sys.argv[1:]:
         if last == '-krb':
+            hashfunc = 'KERBEROS'
             password = arg
+            last = None
+        elif last == '-g':
+            groups.append(arg)
             last = None
         elif arg == '-p':
             read_pass = True
@@ -66,8 +73,7 @@ if __name__ == '__main__':
             read_pass_stdin = True
         elif arg == '-sha1':
             hashfunc = 'SHA1'
-        elif arg == '-krb':
-            hashfunc = 'KERBEROS'
+        elif arg in ['-krb', '-g']:
             last = arg
         elif not username:
             username = arg
@@ -83,4 +89,4 @@ if __name__ == '__main__':
         elif read_pass:
             password = getpass.getpass("Password: ")
 
-    new_user(username, password, hashfunc)
+    new_user(username, password, hashfunc, groups)
