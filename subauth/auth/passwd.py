@@ -11,6 +11,7 @@ Supported functions: sha1
 
 import subauth
 import subauth.auth
+import subauth.auth.krbauth
 import hashlib
 import os
 
@@ -19,42 +20,48 @@ class PasswdAuth(subauth.auth.Auth):
         if not config.contains('filename') or not os.path.exists(config.get('filename')):
             raise RuntimeError("Missing filename for passwd authentication!")
 
+        self.filename = config.get('filename')
+        self.loadfile()
+
         subauth.auth.Auth.__init__(self, config)
+        if config.contains('kerberos.realm'):
+            self._kerberos = subauth.auth.krbauth.KerberosAuth(config.get_prefix('kerberos.'))
+        else:
+            self._kerberos = None
 
-
-    def auth(self, username, password):
-        pass_hash = ''
-        pass_salt = ''
-        hash_func = ''
-        with open(self.config.get('filename')) as f:
+    def loadfile(self):
+        self.users = {}
+        with open(self.filename) as f:
             for line in f:
                 if not line or line.strip() == '' or line[0] == '#' or ':' not in line:
                     continue
 
                 cols = line.split(':')
-                if cols[0] == username:
-                    hash_func = cols[1]
-                    pass_salt = cols[2]
-                    pass_hash = cols[3]
+                username = cols[0]
+                hash_func = cols[1]
+                pass_hash = cols[2]
 
+                self.users[username] = (hash_func, pass_hash)
 
-        if not hash_func or not pass_hash or not pass_salt:
+    def auth(self, username, password):
+        if not username in self.users:
             return False
 
-        subauth.log('found: %s/%s/%s' % (hash_func, pass_salt, pass_hash))
-        test = ''
-        if hash_func == 'sha1':
+        hash_func, pass_hash = self.users[username]
+
+        if hash_func.startswith('{SHA1}'):
+            test = ''
+            pass_salt = hash_func[6:]
             test = hashlib.sha1(pass_salt + password).hexdigest()
+            return secure_compare(test, pass_hash)
+        elif hash_func.startswith('{KERBEROS}'):
+            return self._kerberos.auth(hash_func[10:], password)
 
-        if not test:
-            return False
-
-        subauth.log('comparing %s ? %s' % (test, secure_compare(test, pass_hash)))
-
-        return secure_compare(test, pass_hash)
+        return False
 
     def __repr__(self):
-        return "Passwd file: %s" % self.config.get('filename')
+        return "Passwd file: %s" % self.filename
+
 
 def secure_compare(one, two):
     same = True

@@ -4,6 +4,7 @@ import hmac
 import sys
 
 import subauth.config
+import subauth.auth.passwd
 
 from flask import Flask, request, Response
 
@@ -11,15 +12,7 @@ app = Flask(__name__)
 
 conf = subauth.config.Config('subauth.conf')
 
-auth_backends = []
-for method in [x.strip() for x in conf.get('auth','').split(',')]:
-    if method == 'kerberos':
-        import subauth.auth.krbauth
-        auth_backends.append(subauth.auth.krbauth.KerberosAuth(conf.get_prefix('kerberos.')))
-    elif method == 'passwd':
-        import subauth.auth.passwd
-        auth_backends.append(subauth.auth.passwd.PasswdAuth(conf.get_prefix('passwd.')))
-
+auth_backend = subauth.auth.passwd.PasswdAuth(conf.get_prefix('passwd.'))
 
 def make_digest(message):
     return hmac.new(conf.get('ticket.secret'), message, hashlib.sha1).hexdigest()
@@ -45,6 +38,11 @@ def log(msg):
 def page_not_found(error):
     print 'page not found: %s' % request.path
     return 'This page does not exist', 404
+
+# @app.route("/reload")
+# def reload():
+#     auth_backend.loadfile()
+#     return "OK"
 
 @app.route("/auth")
 def passport():
@@ -75,16 +73,13 @@ def passport():
         log("no auth... request one")
         return authenticate()
     
-    log("Checking: %s/*****************" % (request.authorization.username, ))
-    
-    for auth in auth_backends:
-        log("Trying: %s" % auth)
-        try:
-            if auth.auth(request.authorization.username, request.authorization.password):
-                log("VALID!")
-                return valid_auth_response(request.authorization.username)
-        except Exception, e:
-            log(str(e))
-    
+    log("Checking: %s/*****************" % (request.authorization.username,))
+
+    try:
+        if auth_backend.auth(request.authorization.username, request.authorization.password):
+            return valid_auth_response(request.authorization.username)
+    except Exception, e:
+        log(str(e))
+
     log("no valid authentication :(")
     return authenticate()

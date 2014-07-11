@@ -14,9 +14,9 @@ class KerberosAuth(subauth.auth.Auth):
         subauth.auth.Auth.__init__(self, config)
 
     def auth(self, username, password):
-        subauth.log('trying user: %s|%s|%s' % (self.config.get('usertemplate', '%s') % username, self.config.get('domain',''), self.config.get('realm')))
+        subauth.log('trying user: %s|%s|%s' % (username, self.config.get('domain',''), self.config.get('realm')))
         try:
-            if kerberos.checkPassword(self.config.get('usertemplate', '%s') % username, password, self.config.get('domain',''), self.config.get('realm')):
+            if kerberos.checkPassword(username, password, self.config.get('domain',''), self.config.get('realm')):
                 subauth.log("Success!")
                 return True
         except Exception, e:
