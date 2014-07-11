@@ -3,20 +3,21 @@ Implement kerberos authentication
 '''
 
 import subauth
-import subauth.auth
 import kerberos
 
-class KerberosAuth(subauth.auth.Auth):
+class KerberosAuth(object):
     def __init__(self, config):
         if not config.contains('realm'):
             raise RuntimeError("Missing Kerberos Realm for authentication!")
 
-        subauth.auth.Auth.__init__(self, config)
+	self.realm = config.get('realm')
+	self.domain = config.get('domain', '')
+
 
     def auth(self, username, password):
-        subauth.log('trying user: %s|%s|%s' % (username, self.config.get('domain',''), self.config.get('realm')))
+        subauth.log('trying user: %s|%s|%s' % (username, self.domain, self.realm))
         try:
-            if kerberos.checkPassword(username, password, self.config.get('domain',''), self.config.get('realm')):
+            if kerberos.checkPassword(username, password, self.domain, self.realm):
                 subauth.log("Success!")
                 return True
         except Exception, e:
@@ -25,4 +26,4 @@ class KerberosAuth(subauth.auth.Auth):
         return False
 
     def __repr__(self):
-        return "Kerberos: %s" % self.config.get('realm')
+        return "Kerberos: %s" % self.realm

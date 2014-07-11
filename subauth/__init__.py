@@ -4,11 +4,14 @@ import hmac
 import sys
 
 import subauth.config
+import subauth.auth
 
 from flask import Flask, request, Response
 
 app = Flask(__name__)
 conf = subauth.config.Config('subauth.conf')
+
+auth_backend = subauth.auth.PasswdAuth(conf.get_prefix('passwd.'))
 
 def make_digest(message):
     return hmac.new(conf.get('ticket.secret'), message, hashlib.sha1).hexdigest()
@@ -79,6 +82,3 @@ def passport():
 
     log("no valid authentication :(")
     return authenticate()
-
-import subauth.auth.passwd
-auth_backend = subauth.auth.passwd.PasswdAuth(conf.get_prefix('passwd.'))
