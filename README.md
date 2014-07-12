@@ -42,6 +42,8 @@ What do these values mean?
 
 > Note: If you want to use Kerberos delegation, you'll need to also run `./install.sh kerberos` to install the appropriate Python libraries.
 
+**require_secure** - Only process a request (including asking for a password) if the request is secure (HTTPS). SSL must be setup within Nginx and the proper uWSGI parameter set (HTTPS).
+
 **verbose** - Include this line if you want verbose logging
 
 ## Adding users
@@ -84,6 +86,7 @@ Here is how to add this as a sub-request authentication service in nginx.conf. L
             uwsgi_param  REMOTE_PORT        $remote_port;
             uwsgi_param  SERVER_PORT        $server_port;
             uwsgi_param  SERVER_NAME        $server_name;
+            uwsgi_param  HTTPS              $https if_not_empty;
         }
 
 Key points:
