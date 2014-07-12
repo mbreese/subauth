@@ -23,6 +23,10 @@ def authenticate():
     'You have to login with proper credentials', 401,
     {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
+def require_secure():
+    """Sends a 403 Forbidden response that"""
+    return Response('Could not verify your access level for that URL.\n', 403, {})
+
 def valid_auth_response(username):
     expires = str(int(time.time() + conf.get('ticket.expires'))) # now + 1 hour
     resp = Response("OK", 200, {'X-%s' % conf.get('ticket.cookie', 'SUBAUTH'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
@@ -52,6 +56,10 @@ def passport():
     If that doesn't exist, we will try to authenticate the user using HTTP-BASIC authentication
     '''
     log('original uri: %s' % request.args.get('p'))
+    if conf.get('require_secure', False):
+        log('is request secure? %s' % request.is_secure)
+        if not request.is_secure:
+            return require_secure()
 
     auth_cookie = request.cookies.get(conf.get('ticket.cookie', 'IGVTICKET'))
     if auth_cookie:
