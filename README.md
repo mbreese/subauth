@@ -89,7 +89,7 @@ Here is how to add this as a sub-request authentication service in nginx.conf. L
 Key points:
 
 * Make sure that your cookie name is set correctly in `auth_request`.
-* Make sure that you are pointing to the correct location for the uWSGI socket. By default we point to a BSD socket (file), but this could also point to a port.
+* Make sure that you are pointing to the correct location for the uWSGI socket. By default we point to a BSD socket (file), but this could also point to a port. To run the uWSGI server on a port, you'd have to make the appropriate changes to the `run.sh` script as well.
 
 ## Starting subauth
-To start the webservice, use the included `run.sh` script. It has three commands: `./run.sh start`, `./run.sh start`, or `./run.sh restart`. If you add a new user, then the service needs to be restarted (it loads the configuration from disk once).
+To start the webservice, use the included `run.sh` script. It has three commands: `./run.sh start`, `./run.sh stop`, or `./run.sh restart`. If you add a new user, then the entire service needs to be restarted as we load the configuration from disk once.
