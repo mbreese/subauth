@@ -3,14 +3,18 @@ Implement authentication using an formated text file.
 
 File format:
 
-username:function:salt:func(salt+password)
+username:{function}:hashed_password
 
-Supported functions: sha1
+Supported functions: sha1, sha256, bcrypt, kerberos, pam
+
+SHA1, SHA256 include a salt in their hashed_password field: salt$hash
 
 '''
 
 import hashlib
 import os
+import bcrypt
+import pam
 
 class PasswdAuth(object):
     def __init__(self, config):
@@ -36,7 +40,10 @@ class PasswdAuth(object):
                 cols = line.split(':')
                 username = cols[0]
                 hash_func = cols[1]
-                pass_hash = cols[2]
+                if len(cols) > 2:
+                    pass_hash = cols[2]
+                else:
+                    pass_hash = ''
 
                 self.users[username] = (hash_func, pass_hash)
 
@@ -47,17 +54,41 @@ class PasswdAuth(object):
         hash_func, pass_hash = self.users[username]
 
         if hash_func.startswith('{SHA1}'):
-            test = ''
-            pass_salt = hash_func[6:]
-            test = hashlib.sha1(pass_salt + password).hexdigest()
-            return secure_compare(test, pass_hash)
+            salt, pass_hash2 = pass_hash.split('$')
+            return auth_sha1(password, salt, pass_hash2)
+        elif hash_func.startswith('{SHA256}'):
+            salt, pass_hash2 = pass_hash.split('$')
+            return auth_sha256(password, salt, pass_hash2)
+        elif hash_func.startswith('{BCRYPT}'):
+            return auth_bcrypt(password, pass_hash)
+        elif hash_func.startswith('{PAM}'):
+            return self.auth_pam(username, password)
         elif hash_func.startswith('{KERBEROS}'):
-            return self._kerberos.auth(hash_func[10:], password)
+            return self._kerberos.auth(pass_hash, password)
 
         return False
 
     def __repr__(self):
         return "Passwd file: %s" % self.filename
+
+
+def auth_sha1(test_pass, salt, pass_hash):
+    test = hashlib.sha1(salt + test_pass).hexdigest()
+    return secure_compare(test, pass_hash)
+
+
+def auth_sha256(test_pass, salt, pass_hash):
+    test = hashlib.sha256(salt + test_pass).hexdigest()
+    return secure_compare(test, pass_hash)
+
+
+def auth_bcrypt(test_pass, pass_hash):
+    return bcrypt.hashpw(test_pass, pass_hash)
+
+
+def auth_pam(username, password):
+    p = pam.pam()
+    return p.authenticate(username, password)
 
 
 def secure_compare(one, two):

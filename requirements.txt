@@ -1,2 +1,4 @@
 flask
 uwsgi
+bcrypt
+pam

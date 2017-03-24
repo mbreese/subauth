@@ -52,11 +52,13 @@ What do these values mean?
 
 Valid users are stored in a local passwd-like file. You can set the pathname of this file in the `subauth.conf` file (see above). Each user that will be allowed access must be specified in this file. Each line should be formatted like this:
 
-    username:{type}typeinfo:password:groups
+    username:{type}:password:groups
 
-Where {type} is either `{SHA1}` or `{KEREROS}`. If the type is `{SHA1}`, the typeinfo will be the salt used to hash the users's password. Then the password will be the sha1(salt + password).
+Where {type} is either `{SHA1}` or `{KEREROS}`. If the type is `{SHA1}` or `{SHA256}`, the a salt will be included in the password field (`salt$password`). Then the password will be the hash(salt + password).
 
 If the type is `{KERBEROS}`, the typeinfo will be the Kerberos username that will be sent to the Kerberos server for authentication (usually username@domain.edu). In this case, the password field will be empty (it isn't used).
+
+If the type is `{PAM}`, PAM authentication on the localhost will be used.
 
 Groups should be a comma-delimited list of valid groups that this user belongs to. Groups aren't currently used, but they may be used in the future to grant access to distinct paths.
 
