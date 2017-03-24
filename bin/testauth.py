@@ -24,4 +24,8 @@ if __name__ == '__main__':
     password = getpass.getpass("Password: ")
 
     auth_backend = subauth.auth.PasswdAuth(fname)
-    return auth_backend.auth(username, password)
+    if auth_backend.auth(username, password):
+        print "OK"
+    else
+        print "ERROR"
+        sys.exit(1)
