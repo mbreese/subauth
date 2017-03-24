@@ -41,7 +41,7 @@ def usage(msg=None):
     sys.stderr.write('''\
 Create a new entry for the text-password authentication file.
 
-Usage: passwd.py {opts} username
+Usage: newuser.py {opts} username
 
 Possible options:
     -p        Read password from command-line 
