@@ -29,7 +29,7 @@ def require_secure():
 
 def valid_auth_response(username):
     expires = str(int(time.time() + conf.get('ticket.expires'))) # now + 1 hour
-    resp = Response("OK", 200, {'X-%s' % conf.get('ticket.cookie', 'SUBAUTH'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
+    resp = Response("<html><body>OK<br/><a href=\"/auth/passwd\">Change password</a><br/><br/><a href=\"/auth/signout\">Sign out</a></body></html>", 200, {'X-%s' % conf.get('ticket.cookie', 'SUBAUTH'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
     resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTH'), '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username))))
     return resp
 
@@ -47,7 +47,53 @@ def page_not_found(error):
 #     auth_backend.loadfile()
 #     return "OK"
 
-@app.route("/auth")
+@app.route("/auth/signout")
+def signout():
+    resp = Response("OK", 200)
+    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTH'), '', expires='0')
+    return resp
+
+@app.route("/auth/passwd", methods=["GET","POST"])
+def change_passwd():
+    if not conf.get('allow_change', False):
+        return 'Password changing has been disabled'
+
+    msg = ''
+    if request.method == 'POST':
+        username = request.form['username'].encode('UTF_8')
+        oldpass = request.form['oldpass'].encode('UTF_8')
+        newpass = request.form['newpass'].encode('UTF_8')
+        newpass2 = request.form['newpass2'].encode('UTF_8')
+        if not auth_backend.auth(username, oldpass):
+            msg = 'Invalid username/password'
+        elif newpass != newpass2:
+            msg = 'New passwords did not match!'
+        elif auth_backend.change_password(username, newpass):
+            return 'Changed.'
+        else:
+            msg = 'Unable to change password (account type doesn\'t allow it)'
+
+    return '''
+<html>
+<head><title>Change password</title></head>
+<body>
+Change password<br/>
+<b>%s</b>
+<form action="/auth/passwd" method=POST>
+<table border=0>
+<tr><td>Username</td><td><input name='username' value='%s'/></td></tr>
+<tr><td>Old password</td><td><input name='oldpass' type='password'/></td></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>New password</td><td><input name='newpass' type='password'/></td></tr>
+<tr><td>Confirm</td><td><input name='newpass2' type='password'/></td></tr>
+<tr><td>&nbsp;</td><td><input type='submit' value='Change password'/></td></tr>
+</table>
+</form>
+</body>
+</html>
+''' % (msg,request.form['username'] if 'username' in request.form else '')
+
+@app.route("/auth", strict_slashes=False)
 def passport():
     '''
     this is the main authenticating function
@@ -56,6 +102,7 @@ def passport():
     If that doesn't exist, we will try to authenticate the user using HTTP-BASIC authentication
     '''
     log('original uri: %s' % request.args.get('p'))
+
     if conf.get('require_secure', False):
         log('is request secure? %s' % request.is_secure)
         if not request.is_secure:
@@ -69,7 +116,8 @@ def passport():
             if int(ts) > time.time() and make_digest('%s:%s' % (ts, username)) == sig:
                 log('cookie valid')
                 return valid_auth_response(username)
-        except:
+        except Exception, e:
+            log(str(e))
             pass
         log('cookie not valid')
     else:

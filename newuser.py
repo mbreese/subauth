@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!venv/bin/python
 import sys
 import os
 import hashlib
@@ -6,7 +6,7 @@ import getpass
 import base64
 import bcrypt
 
-def new_user(username, password='', hashfunc='sha1', groups=[]):
+def new_user(username, password='', hashfunc='BCRYPT', groups=[]):
 
     if not password:
         # generating random password
@@ -16,19 +16,18 @@ def new_user(username, password='', hashfunc='sha1', groups=[]):
     if hashfunc == 'SHA1':
         salt = base64.b64encode(os.urandom(33))
         hashpass = hashlib.sha1(salt + password).hexdigest()
-        print '%s:{SHA1}:%s$%s:%s' % (username, salt, hashpass, ','.join(groups))
+        print '%s:SHA1:%s$%s:%s' % (username, salt, hashpass, ','.join(groups))
     elif hashfunc == 'SHA256':
         salt = base64.b64encode(os.urandom(33))
         hashpass = hashlib.sha256(salt + password).hexdigest()
-        print '%s:{SHA256}:%s$%s:%s' % (username, salt, hashpass, ','.join(groups))
+        print '%s:SHA256:%s$%s:%s' % (username, salt, hashpass, ','.join(groups))
     elif hashfunc == 'BCRYPT':
-        salt = bcrypt.gensalt()
-        hashpass = bcrypt.hashpw('secret', salt)
-        print '%s:{BCRYPT}:%s:%s' % (username, hashpass, ','.join(groups))
+        hashpass = bcrypt.hashpw(password, bcrypt.gensalt())
+        print '%s:BCRYPT:%s:%s' % (username, hashpass, ','.join(groups))
     elif hashfunc == 'KERBEROS':
-        print '%s:{KERBEROS}:%s:%s' % (username, password, ','.join(groups))
-    elif hashfunc == 'PAM':
-        print '%s:{PAM}::%s' % (username, ','.join(groups))
+        print '%s:KERBEROS:%s:%s' % (username, password, ','.join(groups))
+    elif hashfunc == 'LOGIN':
+        print '%s:LOGIN::%s' % (username, ','.join(groups))
     else:
         sys.stderr.write("ERROR! Invalid hash function: %s\n" % hashfunc)
         sys.exit(1)
@@ -49,7 +48,7 @@ Possible options:
               (default is to generate a random password)
     -g group  Group for the user to belong to (can be multiple)
 
-    -pam             Use PAM authentication
+    -login           Use Linux user login authentication
     -sha1            Use SHA1 hash function
     -sha256          Use SHA256 hash function
     -bcrypt          Use bcrypt hash function (default)
@@ -86,8 +85,8 @@ if __name__ == '__main__':
             hashfunc = 'SHA1'
         elif arg == '-sha256':
             hashfunc = 'SHA256'
-        elif arg == '-pam':
-            hashfunc = 'PAM'
+        elif arg == '-login':
+            hashfunc = 'LOGIN'
         elif arg == '-bcrypt':
             hashfunc = 'BCRYPT'
         elif arg in ['-krb', '-g']:

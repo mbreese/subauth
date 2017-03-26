@@ -58,7 +58,7 @@ Where {type} is either `{SHA1}` or `{KEREROS}`. If the type is `{SHA1}` or `{SHA
 
 If the type is `{KERBEROS}`, the typeinfo will be the Kerberos username that will be sent to the Kerberos server for authentication (usually username@domain.edu). In this case, the password field will be empty (it isn't used).
 
-If the type is `{PAM}`, PAM authentication on the localhost will be used.
+If the type is `{LOGIN}`, a user login to the localhost will be used.
 
 Groups should be a comma-delimited list of valid groups that this user belongs to. Groups aren't currently used, but they may be used in the future to grant access to distinct paths.
 
