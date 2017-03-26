@@ -27,6 +27,7 @@ In order to use subauth, you'll have to setup a local configuration file. Here i
     passwd.filename=local.passwd
     passwd.kerberos.realm=STANFORD.EDU
     verbose
+    allow_change
 
 What do these values mean?
 
