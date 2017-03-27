@@ -14,7 +14,7 @@ conf = subauth.config.Config('subauth.conf')
 auth_backend = subauth.auth.PasswdAuth(conf.get_prefix('passwd.'))
 
 def make_digest(message):
-    return hmac.new(conf.get('ticket.secret'), message, hashlib.sha1).hexdigest()
+    return hmac.new(conf.get('ticket.secret'), message, hashlib.sha256).hexdigest()
 
 def authenticate():
     """Sends a 401 response that enables basic auth"""
@@ -61,7 +61,7 @@ def passport():
         if not request.is_secure:
             return require_secure()
 
-    auth_cookie = request.cookies.get(conf.get('ticket.cookie', 'IGVTICKET'))
+    auth_cookie = request.cookies.get(conf.get('ticket.cookie', 'SUBAUTH'))
     if auth_cookie:
         log('cookie: %s' % auth_cookie)
         try:
