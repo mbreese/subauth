@@ -10,13 +10,15 @@ cd $(dirname $0)
 start() {
     if [ ! -e tmp ]; then
         mkdir tmp
+	chown nginx tmp
     fi
     if [ -e tmp/uwsgi.pid ]; then
         echo "Is this already running?"
         exit
     fi
 
-    venv/bin/uwsgi --immediate-uid nginx --pidfile tmp/uwsgi.pid -s tmp/uwsgi.sock -d tmp/uwsgi.log -w wsgi:app
+    #venv/bin/uwsgi --immediate-uid nginx --pidfile tmp/uwsgi.pid -s 127.0.0.1:8001 -d tmp/uwsgi.log -w wsgi:app
+    venv/bin/uwsgi --uid nginx --gid nginx --pidfile tmp/uwsgi.pid -s tmp/uwsgi.sock -d tmp/uwsgi.log -w wsgi:app
     sleep 2
     chmod 770 tmp/uwsgi.sock
 }
@@ -36,6 +38,9 @@ stop() {
             kill -9 $PID
         fi
         rm tmp/uwsgi.pid
+	if [ -e tmp/uwsgi.sock ]; then
+		rm tmp/uwsgi.sock
+	fi
     fi
 }
 

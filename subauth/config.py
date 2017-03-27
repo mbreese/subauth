@@ -1,3 +1,5 @@
+import os
+
 class Config(object):
 	def __init__(self, filename=None, values=None):
 		if values:
@@ -6,6 +8,9 @@ class Config(object):
 			self._values = {}
 
 		if filename:
+			if not os.path.exists(filename):
+				raise RuntimeError("Missing config file: %s\n" % filename)
+			
 			with open(filename) as f:
 				for line in f:
 					if line.strip() == '' or line[0] == '#':
@@ -23,6 +28,10 @@ class Config(object):
 			if k[:len(prefix)] == prefix:
 				vals[k[len(prefix):]] = self._values[k]
 		return Config(values=vals)
+
+	def dump(self):
+		for k in self._values:
+			print "%s => %s" % (k, self._values[k])
 
 	def contains(self, key):
 		return key in self._values

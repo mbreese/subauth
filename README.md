@@ -27,6 +27,7 @@ In order to use subauth, you'll have to setup a local configuration file. Here i
     passwd.filename=local.passwd
     passwd.kerberos.realm=STANFORD.EDU
     verbose
+    allow_change
 
 What do these values mean?
 
@@ -48,6 +49,8 @@ What do these values mean?
 
 **verbose** - Include this line if you want verbose logging
 
+**allow_change** - Allow users to change their passwords (only possible for SHA1, SHA256, BCRYPT account types)
+
 ## Adding users
 
 Valid users are stored in a local passwd-like file. You can set the pathname of this file in the `subauth.conf` file (see above). Each user that will be allowed access must be specified in this file. Each line should be formatted like this:
@@ -58,7 +61,7 @@ Where {type} is either `{SHA1}` or `{KEREROS}`. If the type is `{SHA1}` or `{SHA
 
 If the type is `{KERBEROS}`, the typeinfo will be the Kerberos username that will be sent to the Kerberos server for authentication (usually username@domain.edu). In this case, the password field will be empty (it isn't used).
 
-If the type is `{PAM}`, PAM authentication on the localhost will be used.
+If the type is `{LOGIN}`, a user login to the localhost will be used.
 
 Groups should be a comma-delimited list of valid groups that this user belongs to. Groups aren't currently used, but they may be used in the future to grant access to distinct paths.
 
@@ -93,10 +96,16 @@ Here is how to add this as a sub-request authentication service in nginx.conf. L
             uwsgi_param  HTTPS              $https if_not_empty;
         }
 
+        location /auth {
+        uwsgi_pass unix:///srv/subauth/tmp/uwsgi.sock;
+        include uwsgi_params;
+        }
+
 Key points:
 
 * Make sure that your cookie name is set correctly in `auth_request`.
 * Make sure that you are pointing to the correct location for the uWSGI socket. By default we point to a BSD socket (file), but this could also point to a port. To run the uWSGI server on a port, you'd have to make the appropriate changes to the `run.sh` script as well.
+* Currently the WSGI app that controls authentication is hard coded to use the URI `/auth` (See above).
 
 ## Starting subauth
 To start the webservice, use the included `run.sh` script. It has three commands: `./run.sh start`, `./run.sh stop`, or `./run.sh restart`. If you add a new user, then the entire service needs to be restarted as we load the configuration from disk once.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!venv/bin/python
 import sys
 import os
 import getpass
@@ -12,18 +12,19 @@ def usage(msg=None):
     sys.stderr.write('''\
 Create a new entry for the text-password authentication file.
 
-Usage: testauth.py passwd_file username
+Usage: testauth.py username
 
 ''')
 
     sys.exit(1)
 
 if __name__ == '__main__':
-    fname = sys.argv[1]
-    username = sys.argv[2]
+    username = sys.argv[1]
     password = getpass.getpass("Password: ")
 
-    auth_backend = subauth.auth.PasswdAuth(fname)
+    conf = subauth.config.Config('subauth.conf')
+
+    auth_backend = subauth.auth.PasswdAuth(conf.get_prefix('passwd.'))
     if auth_backend.auth(username, password):
         print "OK"
     else:
