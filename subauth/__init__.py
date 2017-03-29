@@ -11,7 +11,7 @@ from flask import Flask, request, Response
 app = Flask(__name__)
 conf = subauth.config.Config('subauth.conf')
 
-auth_backend = subauth.auth.PasswdAuth(conf.get_prefix('passwd.'))
+auth_backend = subauth.auth.PasswdAuth(conf)
 
 def make_digest(message):
     return hmac.new(conf.get('ticket.secret'), message, hashlib.sha256).hexdigest()

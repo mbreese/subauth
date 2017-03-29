@@ -21,12 +21,18 @@ import loginauth
 
 class PasswdAuth(object):
     def __init__(self, config):
-        if not config.contains('filename') or not os.path.exists(config.get('filename')):
+        if not config.contains('passwd.filename') or not os.path.exists(config.get('passwd.filename')):
             config.dump()
             raise RuntimeError("Missing filename for passwd authentication!")
 
-        self.filename = config.get('filename')
+        self.filename = config.get('passwd.filename')
         self.loadfile()
+
+        if config.contains('ldap.uri'):
+            import subauth.auth.ldapauth
+            self._ldap = subauth.auth.ldapauth.LDAPAuth(config.get_prefix('ldap.'))
+        else:
+            self._ldap = None
 
         if config.contains('kerberos.realm'):
             import subauth.auth.krbauth
@@ -105,6 +111,8 @@ class PasswdAuth(object):
             return auth_bcrypt(password, pass_hash)
         elif hash_func == 'LOGIN':
             return auth_login(username, password)
+        elif hash_func == 'LDAP':
+            return self._ldap.auth(username, password)
         elif hash_func == 'KERBEROS':
             return self._kerberos.auth(pass_hash, password)
 

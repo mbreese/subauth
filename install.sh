@@ -18,6 +18,9 @@ fi
 if [ "$1" == "" ]; then
 	echo "Installing required libraries"
 	pip install -r requirements.txt >> install.log 2>&1
+elif [ "$1" == "ldap" ]; then
+	echo "Installing ldap libraries"
+	pip install python-ldap >> install.log 2>&1
 elif [ "$1" == "kerberos" ]; then
 	echo "Installing kerberos libraries"
 	pip install kerberos >> install.log 2>&1

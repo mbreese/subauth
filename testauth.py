@@ -19,12 +19,12 @@ Usage: testauth.py username
     sys.exit(1)
 
 if __name__ == '__main__':
+    conf = subauth.config.Config('subauth.conf')
+
     username = sys.argv[1]
     password = getpass.getpass("Password: ")
 
-    conf = subauth.config.Config('subauth.conf')
-
-    auth_backend = subauth.auth.PasswdAuth(conf.get_prefix('passwd.'))
+    auth_backend = subauth.auth.PasswdAuth(conf)
     if auth_backend.auth(username, password):
         print "OK"
     else:

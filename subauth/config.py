@@ -17,7 +17,7 @@ class Config(object):
 						continue
 
 					if '=' in line:
-						cols = line.strip().split('=')
+						cols = line.strip().split('=',1)
 						self._values[cols[0].strip()] = autotype(cols[1].strip())
 					else:
 						self._values[line.strip()] = True
