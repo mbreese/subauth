@@ -8,7 +8,7 @@ import bcrypt
 
 def new_user(username, password='', hashfunc='BCRYPT', groups=[]):
 
-    if not password:
+    if not password and hashfunc not in ['LOGIN', 'KERBEROS', 'LDAP']:
         # generating random password
         password = base64.b64encode(os.urandom(15)).replace('+', '').replace('=', '').replace('/', '')
         sys.stderr.write('Generating random password: %s\n' % password)
@@ -26,6 +26,8 @@ def new_user(username, password='', hashfunc='BCRYPT', groups=[]):
         print '%s:BCRYPT:%s:%s' % (username, hashpass, ','.join(groups))
     elif hashfunc == 'KERBEROS':
         print '%s:KERBEROS:%s:%s' % (username, password, ','.join(groups))
+    elif hashfunc == 'LDAP':
+        print '%s:LDAP::%s' % (username, ','.join(groups))
     elif hashfunc == 'LOGIN':
         print '%s:LOGIN::%s' % (username, ','.join(groups))
     else:
@@ -49,6 +51,7 @@ Possible options:
     -g group  Group for the user to belong to (can be multiple)
 
     -login           Use Linux user login authentication
+    -ldap            Use simple LDAP bindDN
     -sha1            Use SHA1 hash function
     -sha256          Use SHA256 hash function
     -bcrypt          Use bcrypt hash function (default)
@@ -87,6 +90,8 @@ if __name__ == '__main__':
             hashfunc = 'SHA256'
         elif arg == '-login':
             hashfunc = 'LOGIN'
+        elif arg == '-ldap':
+            hashfunc = 'LDAP'
         elif arg == '-bcrypt':
             hashfunc = 'BCRYPT'
         elif arg in ['-krb', '-g']:
