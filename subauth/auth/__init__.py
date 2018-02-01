@@ -48,7 +48,7 @@ class PasswdAuth(object):
                     continue
 
                 cols = line.strip().split(':')
-                username = cols[0]
+                username = cols[0].lower()
                 hash_func = cols[1]
                 if len(cols) > 2:
                     pass_hash = cols[2]
@@ -96,6 +96,7 @@ class PasswdAuth(object):
             return False
 
     def auth(self, username, password):
+        username = username.lower()
         if not username in self.users:
             return False
 
