@@ -98,6 +98,8 @@ class PasswdAuth(object):
     def auth(self, username, password):
         username = username.lower()
         if not username in self.users:
+            if self._ldap:
+                return self._ldap.auth(username, password)
             return False
 
         hash_func, pass_hash, groups = self.users[username]
