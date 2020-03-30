@@ -20,7 +20,10 @@ class Config(object):
 						cols = line.strip().split('=',1)
 						self._values[cols[0].strip()] = autotype(cols[1].strip())
 					else:
-						self._values[line.strip()] = True
+						if line.strip()[0] == '!':
+							self._values[line.strip()[1:]] = False
+						else:
+							self._values[line.strip()] = True
 
 	def get_prefix(self, prefix):
 		vals = {}
