@@ -36,12 +36,12 @@ def valid_auth_response(username, redirect=False):
         nsredirect = request.cookies.get('NSREDIRECT')
         if nsredirect:
             resp = Response('302 Moved Temporarily', 302, {'Location': nsredirect})
-            resp.set_cookie('NSREDIRECT','', expires='0')
+            resp.set_cookie('NSREDIRECT','', expires='0', domain=conf.get('ticket.domain', None))
 
     if not resp:
         resp = Response("<html><body>OK<br/><a href=\"/auth/passwd\">Change password</a><br/><br/><a href=\"/auth/signout\">Sign out</a></body></html>", 200, {'X-%s' % conf.get('ticket.cookie', 'SUBAUTHCOOKIE'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
 
-    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTHCOOKIE'), '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username))))
+    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTHCOOKIE'), '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username))), domain=conf.get('ticket.domain', None))
     return resp
 
 def log(msg):
@@ -61,7 +61,7 @@ def page_not_found(error):
 @app.route("/auth/signout")
 def signout():
     resp = Response("OK", 200)
-    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTHCOOKIE'), '', expires='0')
+    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTHCOOKIE'), '', expires='0', domain=conf.get('ticket.domain',None))
     return resp
 
 @app.route("/auth/passwd", methods=["GET","POST"])

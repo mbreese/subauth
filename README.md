@@ -22,6 +22,7 @@ In order to use subauth, you'll have to setup a local configuration file. Here i
     # cookie settings
     ticket.secret=**SECRET**
     ticket.cookie=SUBAUTHCOOKIE
+    ticket.domain=.www.example.com
     # expire after 60 minutes
     ticket.expires=3600
     passwd.filename=local.passwd
@@ -34,6 +35,8 @@ What do these values mean?
 **ticket.secret** - This is the private key that will be used to protect your ticket. Don't share this with anyone. If can be generated using the `bin/gensecret.py` script if you need one.
 
 **ticket.cookie** - This is the name of your cookie. This is passed to the user's browser and stored there. You can name this whatever you'd like.
+
+**ticket.domain** - This is the domain under which you want to save the cookie. It is suggested that you include the preceeding '.', as this is how Nginx sets cookies, so if you don't start with a '.', you can end up with duplicate cookies (that end up fighting).
 
 **ticket.expires** - The number of seconds that this ticket is valid for.
 
