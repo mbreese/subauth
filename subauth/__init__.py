@@ -124,17 +124,47 @@ def passport():
         log('no cookie')
 
 
-    if not request.authorization:
-        log("no auth... request one")
-        return authenticate()
+    if not conf.get('http_auth', True):
+        if request.method == 'POST':
+            username = request.form['username'].encode('UTF_8')
+            passwd = request.form['passwd'].encode('UTF_8')
+
+        try:
+            if auth_backend.auth(username, password):
+                return valid_auth_response(username)
+        except Exception, e:
+            log(str(e))
+
+        return '''
+<html>
+<head><title>Sign in</title></head>
+<body>
+Sign in<br/>
+<form action="/auth" method=POST>
+<table border=0>
+<tr><td>Username</td><td><input name='username'/></td></tr>
+<tr><td>Password</td><td><input name='passwd' type='password'/></td></tr>
+<tr><td>&nbsp;</td><td><input type='submit' value='Sign in'/></td></tr>
+</table>
+</form>
+</body>
+</html>
+''' 
+
+    else:
+        if not request.authorization:
+            log("no auth... request one")
+            return authenticate()
     
-    log("Checking: %s/*****************" % (request.authorization.username,))
+        log("Checking: %s/*****************" % (request.authorization.username,))
 
-    try:
-        if auth_backend.auth(request.authorization.username, request.authorization.password):
-            return valid_auth_response(request.authorization.username)
-    except Exception, e:
-        log(str(e))
+        try:
+            if auth_backend.auth(request.authorization.username, request.authorization.password):
+                return valid_auth_response(request.authorization.username)
+        except Exception, e:
+            log(str(e))
 
-    log("no valid authentication :(")
-    return authenticate()
+        log("no valid authentication :(")
+
+        return authenticate()
+
