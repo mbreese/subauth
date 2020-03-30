@@ -69,13 +69,13 @@ These lines may be generated automatically for you using the `bin/newuser.py` sc
 
 ## Nginx config
 
-Here is how to add this as a sub-request authentication service in nginx.conf. Let's assume that you want to install the WSGI application in `/srv/subauth` and that you will want to call it as `/_auth`. Finally, let's assume that we want to *protect* the URL `/data`.
+Here is how to add this as a sub-request authentication service in nginx.conf. Let's assume that you want to install the WSGI application in `/srv/subauth` and that you will want to call it as `/_auth`. Finally, let's assume that we want to *protect* the URL `/private-data`.
 
-    location /data {
-        auth_request /_auth;
-        # if the authentication is successful, set a ticket
-        auth_request_set $foo $upstream_http_x_subauthcookie;
-        add_header Set-Cookie "SUBAUTHCOOKIE=$foo;Domain=www.example.com;Path=/";
+    location /private-data {
+            auth_request /_auth;
+            # if the authentication is successful, set a ticket
+            auth_request_set $foo $upstream_http_x_subauthcookie;
+            add_header Set-Cookie "SUBAUTHCOOKIE=$foo;Domain=www.example.com;Path=/";
     }
     location /_auth {
             uwsgi_pass unix:///srv/subauth/tmp/uwsgi.sock;
@@ -94,12 +94,36 @@ Here is how to add this as a sub-request authentication service in nginx.conf. L
             uwsgi_param  SERVER_PORT        $server_port;
             uwsgi_param  SERVER_NAME        $server_name;
             uwsgi_param  HTTPS              $https if_not_empty;
-        }
+    }
 
-        location /auth {
-        uwsgi_pass unix:///srv/subauth/tmp/uwsgi.sock;
-        include uwsgi_params;
-        }
+    location /auth {
+            uwsgi_pass unix:///srv/subauth/tmp/uwsgi.sock;
+            include uwsgi_params;
+    }
+
+
+If you want to use an HTML form to signin, then you can set that up a bit differently... Nginx expects to get a 200 (success) or a 401/405 on failure from the sub-request authorization page. Because of this, we can't directly send the HTML sign in form. So we need to setup an error handler in Nginx.
+
+    location /private-data {
+            auth_request /_auth;
+
+            error_page 401 = @error401;
+
+            # if the authentication is successful, set a ticket
+            auth_request_set $foo $upstream_http_x_subauthcookie;
+            add_header Set-Cookie "SUBAUTHCOOKIE=$foo;Domain=www.example.com;Path=/";
+    }
+
+    ...
+
+    location @error401 {
+        add_header Set-Cookie "NSREDIRECT=$scheme://$http_host$request_uri;Domain=www.example.com;Path=/";
+        return 302 https://www.example.com/auth/signin;
+    }
+
+
+This does two things. First, when the subauth request fails for /private-data, instead of sending a 401 back to the user (and getting an HTTP-Auth prompt), instead it redirects to /auth/signin. This step also adds a new cookie named 'NSREDIRECT'. When the user successfully signs in, then this cookie is read and the user is redirected back to the resource they originally requested (/private-data).
+
 
 Key points:
 
