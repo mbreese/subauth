@@ -141,8 +141,8 @@ def passport():
     log("Checking: %s/*****************" % (request.authorization.username,))
 
     try:
-        if auth_backend.auth(request.authorization.username, request.authorization.password):
-            return valid_auth_response(request.authorization.username)
+        if auth_backend.auth(str(request.authorization.username), str(request.authorization.password)):
+            return valid_auth_response(str(request.authorization.username))
     except Exception, e:
         log(str(e))
 
