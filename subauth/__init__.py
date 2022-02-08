@@ -104,7 +104,7 @@ Change password<br/>
 </html>
 ''' % (msg,request.form['username'] if 'username' in request.form else '')
 
-@app.route("/auth", strict_slashes=False)
+@app.route("/auth", strict_slashes=False, methods=['GET','POST'])
 def passport():
     '''
     this is the main authenticating function
