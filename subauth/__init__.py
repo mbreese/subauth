@@ -28,10 +28,21 @@ def require_secure():
     """Sends a 403 Forbidden response that"""
     return Response('Could not verify your access level for that URL.\n', 403, {})
 
-def valid_auth_response(username):
+def valid_auth_response(username, redirect=False):
     expires = str(int(time.time() + conf.get('ticket.expires'))) # now + 1 hour
-    resp = Response("<html><body>OK<br/><a href=\"/auth/passwd\">Change password</a><br/><br/><a href=\"/auth/signout\">Sign out</a></body></html>", 200, {'X-%s' % conf.get('ticket.cookie', 'SUBAUTH'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
-    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTH'), '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username))))
+
+    resp = None
+
+    if redirect:
+        nsredirect = request.cookies.get('NSREDIRECT')
+        if nsredirect:
+            resp = Response('302 Moved Temporarily', 302, {'Location': nsredirect})
+            resp.set_cookie('NSREDIRECT','', expires='0', domain=conf.get('ticket.domain', None))
+
+    if not resp:
+        resp = Response("<html><body>OK<br/><a href=\"/auth/passwd\">Change password</a><br/><br/><a href=\"/auth/signout\">Sign out</a></body></html>", 200, {'X-%s' % conf.get('ticket.cookie', 'SUBAUTHCOOKIE'): '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username)))})
+
+    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTHCOOKIE'), '%s:%s:%s' % (expires, username, make_digest("%s:%s" % (expires,username))), domain=conf.get('ticket.domain', None))
     return resp
 
 def log(msg):
@@ -56,7 +67,7 @@ def logout():
 @app.route("/auth/signout")
 def signout():
     resp = Response("OK", 200)
-    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTH'), '', expires='0')
+    resp.set_cookie(conf.get('ticket.cookie', 'SUBAUTHCOOKIE'), '', expires='0', domain=conf.get('ticket.domain',None))
     return resp
 
 @app.route("/auth/passwd", methods=["GET","POST"])
@@ -98,7 +109,6 @@ Change password<br/>
 </body>
 </html>
 ''' % (msg)
-#''' % (msg,cgi.escape(request.form['username']) if 'username' in request.form else '')
 
 
 @app.route("/auth/check")
@@ -136,7 +146,8 @@ You are not authenticated by cookie.
 </html>'''
 
 
-@app.route("/auth", strict_slashes=False, methods=["GET","POST"])
+@app.route("/auth", strict_slashes=False, methods=['GET','POST'])
+>>>>>>> a94a89c35b7352c58e1b416307f2c7aa3218984a
 def passport():
     '''
     this is the main authenticating function
@@ -156,7 +167,7 @@ def passport():
         if not request.is_secure:
             return require_secure()
 
-    auth_cookie = request.cookies.get(conf.get('ticket.cookie', 'SUBAUTH'))
+    auth_cookie = request.cookies.get(conf.get('ticket.cookie', 'SUBAUTHCOOKIE'))
     if auth_cookie:
         log('cookie: %s' % auth_cookie)
         try:
@@ -173,7 +184,6 @@ def passport():
     else:
         log('no cookie')
 
-
     if not request.authorization:
         log("no auth... request one")
         return authenticate()
@@ -185,10 +195,45 @@ def passport():
         return authenticate()
 
     try:
-        if auth_backend.auth(request.authorization.username, request.authorization.password):
-            return valid_auth_response(request.authorization.username)
+        if auth_backend.auth(str(request.authorization.username), str(request.authorization.password)):
+            return valid_auth_response(str(request.authorization.username))
     except Exception, e:
         log(str(e))
 
     log("no valid authentication :(")
+
     return authenticate()
+
+@app.route("/auth/signin", strict_slashes=False, methods=['GET','POST'])
+def signin():
+    log(request.cookies.get('NSREDIRECT')) 
+    log("checking html request")
+    if request.method == 'POST':
+        username = request.form['username'].encode('UTF_8')
+        passwd = request.form['passwd'].encode('UTF_8')
+
+        try:
+            if auth_backend.auth(username, passwd):
+                log("success!")
+                return valid_auth_response(username, True)
+        except Exception, e:
+            log(str(e))
+
+    log("no auth")
+    log("sending html form")
+    return '''
+<html>
+<head><title>Sign in</title></head>
+<body>
+Sign in<br/>
+<form action="/auth/signin" method=POST>
+<table border=0>
+<tr><td>Username</td><td><input name='username'/></td></tr>
+<tr><td>Password</td><td><input name='passwd' type='password'/></td></tr>
+<tr><td>&nbsp;</td><td><input type='submit' value='Sign in'/></td></tr>
+</table>
+</form>
+</body>
+</html>
+'''
+
