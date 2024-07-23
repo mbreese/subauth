@@ -2,6 +2,7 @@ import time
 import hashlib
 import hmac
 import sys
+import cgi
 
 import subauth.config
 import subauth.auth
@@ -47,6 +48,11 @@ def page_not_found(error):
 #     auth_backend.loadfile()
 #     return "OK"
 
+@app.route("/auth/logout")
+
+def logout():
+    return signout()
+
 @app.route("/auth/signout")
 def signout():
     resp = Response("OK", 200)
@@ -81,7 +87,7 @@ Change password<br/>
 <b>%s</b>
 <form action="/auth/passwd" method=POST>
 <table border=0>
-<tr><td>Username</td><td><input name='username' value='%s'/></td></tr>
+<tr><td>Username</td><td><input name='username' value=''/></td></tr>
 <tr><td>Old password</td><td><input name='oldpass' type='password'/></td></tr>
 <tr><td>&nbsp;</td></tr>
 <tr><td>New password</td><td><input name='newpass' type='password'/></td></tr>
@@ -91,9 +97,46 @@ Change password<br/>
 </form>
 </body>
 </html>
-''' % (msg,request.form['username'] if 'username' in request.form else '')
+''' % (msg)
+#''' % (msg,cgi.escape(request.form['username']) if 'username' in request.form else '')
 
-@app.route("/auth", strict_slashes=False)
+
+@app.route("/auth/check")
+def check():
+    auth_cookie = request.cookies.get(conf.get('ticket.cookie', 'SUBAUTH'))
+    forceuser = request.args.get('forceuser')
+    if auth_cookie:
+        log('cookie: %s' % auth_cookie)
+        try:
+            ts, username, sig = auth_cookie.split(':')
+
+            if not forceuser or forceuser == username:
+                if int(ts) > time.time() and make_digest('%s:%s' % (ts, username)) == sig:
+                    log('cookie valid')
+                    if valid_auth_response(username):
+                        return '''
+<html>
+<body>
+You are authenticated as: %s<br/>
+<br/><a href=\"/auth/passwd\">Change password</a><br/><br/><a href=\"/auth/signout\">Sign out</a>
+</body>
+</html>''' % (username)
+        except Exception, e:
+            log(str(e))
+            pass
+        log('cookie not valid')
+    else:
+        log('no cookie')
+
+    return '''
+<html>
+<body>
+You are not authenticated by cookie.
+</body>
+</html>'''
+
+
+@app.route("/auth", strict_slashes=False, methods=["GET","POST"])
 def passport():
     '''
     this is the main authenticating function
@@ -101,7 +144,12 @@ def passport():
     First, we will look for a signed cookie with an expiration date.
     If that doesn't exist, we will try to authenticate the user using HTTP-BASIC authentication
     '''
-    log('original uri: %s' % request.args.get('p'))
+    #log('original uri: %s' % request.args.get('p'))
+    #log('args: %s' % repr(request.args))
+    forceuser = request.args.get('forceuser')
+
+    if forceuser:
+        log('request must be for username: %s' % forceuser)
 
     if conf.get('require_secure', False):
         log('is request secure? %s' % request.is_secure)
@@ -113,9 +161,11 @@ def passport():
         log('cookie: %s' % auth_cookie)
         try:
             ts, username, sig = auth_cookie.split(':')
-            if int(ts) > time.time() and make_digest('%s:%s' % (ts, username)) == sig:
-                log('cookie valid')
-                return valid_auth_response(username)
+
+            if not forceuser or forceuser == username:
+                if int(ts) > time.time() and make_digest('%s:%s' % (ts, username)) == sig:
+                    log('cookie valid')
+                    return valid_auth_response(username)
         except Exception, e:
             log(str(e))
             pass
@@ -129,6 +179,10 @@ def passport():
         return authenticate()
     
     log("Checking: %s/*****************" % (request.authorization.username,))
+
+    if forceuser and forceuser != request.authorization.username:
+        log("bad forceuser auth")
+        return authenticate()
 
     try:
         if auth_backend.auth(request.authorization.username, request.authorization.password):
